@@ -30,6 +30,56 @@
             box-sizing: border-box;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- ホーム画面 --- */
+        #home-screen {
+            width: 100%;
+            max-width: 600px;
+            height: 650px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+            /* ↓↓↓ お好きな画像のURLに差し替えてください ↓↓↓ */
+            background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://placehold.co/600x650/003366/FFFFFF?text=背景画像');
+        }
+
+        #home-screen h1 {
+            font-size: 3rem;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+        }
+
+        #start-button {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            border: none;
+            background-color: white;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #start-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+
+        /* --- クイズ画面 --- */
         .quiz-container {
             background-color: white;
             padding: 2rem;
@@ -38,6 +88,22 @@
             width: 100%;
             max-width: 600px;
             text-align: center;
+            position: relative; /* 終了ボタンの基準位置 */
+        }
+        
+        #end-game-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+            color: #666;
+        }
+        #end-game-button:hover {
+             background-color: #eee;
         }
 
         #question-num-label {
@@ -48,7 +114,7 @@
 
         #code-label {
             font-family: 'Roboto', sans-serif;
-            font-size: clamp(3rem, 12vw, 5rem); /* 画面サイズに応じて調整 */
+            font-size: clamp(3rem, 12vw, 5rem);
             font-weight: 700;
             color: var(--primary-color);
             margin: 1.5rem 0;
@@ -71,7 +137,6 @@
             background-color: #fff;
             cursor: pointer;
             transition: all 0.2s ease;
-            /* テキストがはみ出さないように調整 */
             word-break: break-word;
             min-height: 4em;
             display: flex;
@@ -93,7 +158,7 @@
         #feedback-label {
             font-size: 1.2rem;
             font-weight: 700;
-            min-height: 1.5em; /* 高さを確保してレイアウトが崩れないように */
+            min-height: 1.5em;
             margin: 1.5rem 0;
         }
 
@@ -108,7 +173,7 @@
             color: white;
             cursor: pointer;
             transition: background-color 0.2s ease;
-            visibility: hidden; /* 最初は非表示 */
+            visibility: hidden;
         }
 
         #next-button:hover {
@@ -141,27 +206,72 @@
         #reset-button:hover {
             background-color: #eee;
         }
+        
+        /* --- 集計画面 --- */
+        #results-screen {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        #results-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        #session-score {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        #back-to-home-button {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="quiz-container">
+    <!-- ホーム画面 -->
+    <div id="home-screen">
+        <h1>市外局番クイズ</h1>
+        <button id="start-button">通常モード</button>
+    </div>
+
+    <!-- クイズ画面 -->
+    <div id="quiz-container" class="hidden">
+        <button id="end-game-button">ゲームを終了</button>
         <h2 id="question-num-label"></h2>
         <h1 id="code-label"></h1>
-        <div id="choices-container">
-            <!-- 選択肢ボタンはJSで生成 -->
-        </div>
+        <div id="choices-container"></div>
         <p id="feedback-label"></p>
-        <button id="next-button">次の問題へ (Enter)</button>
-        
+        <button id="next-button">次の問題へ (Enter / Space)</button>
         <div class="footer">
             <p id="score-label"></p>
             <button id="reset-button">成績リセット</button>
         </div>
     </div>
 
+    <!-- 集計画面 -->
+    <div id="results-screen" class="hidden">
+        <h2>今回の結果</h2>
+        <p id="session-score"></p>
+        <button id="back-to-home-button">ホームに戻る</button>
+    </div>
+
+
     <script>
-        // 市外局番データを直接JSに記述 (まとめられた市町村名のまま更新)
+        // 市外局番データを直接JSに記述
         const areaData = [
             { city: '札幌', code: '11' }, { city: '旭川', code: '166' }, { city: '函館', code: '138' },
             { city: '釧路', code: '154' }, { city: '小樽', code: '134' }, { city: '室蘭', code: '143' },
@@ -233,7 +343,15 @@
             { city: '那覇', code: '98' }
         ];
 
-        // DOM要素の取得
+        // === DOM要素の取得 ===
+        const homeScreen = document.getElementById('home-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsScreen = document.getElementById('results-screen');
+
+        const startButton = document.getElementById('start-button');
+        const endGameButton = document.getElementById('end-game-button');
+        const backToHomeButton = document.getElementById('back-to-home-button');
+        
         const questionNumLabel = document.getElementById('question-num-label');
         const codeLabel = document.getElementById('code-label');
         const choicesContainer = document.getElementById('choices-container');
@@ -241,18 +359,24 @@
         const nextButton = document.getElementById('next-button');
         const scoreLabel = document.getElementById('score-label');
         const resetButton = document.getElementById('reset-button');
+        const sessionScoreLabel = document.getElementById('session-score');
 
-        // ゲームの状態変数
+        // === ゲームの状態変数 ===
         let questionCount = 0;
         let currentGameCorrect = 0;
         let correctCity = '';
         let choices = [];
         
-        // スコア (localStorageから読み込み)
+        // 累計スコア (localStorageから読み込み)
         let totalCorrect = parseInt(localStorage.getItem('totalCorrect')) || 0;
         let totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || 0;
 
+        // === ゲームロジック ===
         function startGame() {
+            homeScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+
             questionCount = 0;
             currentGameCorrect = 0;
             nextQuestion();
@@ -260,17 +384,13 @@
 
         function nextQuestion() {
             questionCount++;
-            if (questionCount > 10) {
-                showFinalResult();
-                return;
-            }
 
             // UIリセット
             feedbackLabel.textContent = '';
             nextButton.style.visibility = 'hidden';
             choicesContainer.innerHTML = ''; // 選択肢をクリア
 
-            questionNumLabel.textContent = `第 ${questionCount} 問 / 10問`;
+            questionNumLabel.textContent = `第 ${questionCount} 問`;
 
             // 問題をランダムに選択
             const correctIndex = Math.floor(Math.random() * areaData.length);
@@ -285,13 +405,11 @@
             let minIndex = Math.max(0, correctIndex - searchRange);
             let maxIndex = Math.min(areaData.length - 1, correctIndex + searchRange);
 
-            // 近傍から不正解の選択肢を追加
             let nearbyIndices = [];
             for (let i = minIndex; i <= maxIndex; i++) {
                 if (i !== correctIndex) nearbyIndices.push(i);
             }
             
-            // Fisher-Yatesシャッフル
             for (let i = nearbyIndices.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [nearbyIndices[i], nearbyIndices[j]] = [nearbyIndices[j], nearbyIndices[i]];
@@ -303,20 +421,17 @@
                 }
             }
 
-            // 選択肢が4つに満たない場合、全体からランダムに補う
             while (currentChoices.size < 4) {
                 const randomData = areaData[Math.floor(Math.random() * areaData.length)];
                 currentChoices.add(randomData.city);
             }
 
             choices = Array.from(currentChoices);
-            // シャッフル
             for (let i = choices.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [choices[i], choices[j]] = [choices[j], choices[i]];
             }
 
-            // ボタンを生成して表示
             choices.forEach((choice, index) => {
                 const button = document.createElement('button');
                 button.textContent = `(${index + 1}) ${choice}`;
@@ -329,7 +444,6 @@
         }
 
         function checkAnswer(selectedAnswer, selectedButton) {
-            // 全てのボタンを無効化
             const buttons = choicesContainer.getElementsByTagName('button');
             for(const btn of buttons) {
                 btn.disabled = true;
@@ -346,17 +460,14 @@
                 feedbackLabel.textContent = `不正解... 正解は「${correctCity}」`;
                 feedbackLabel.style.color = 'var(--incorrect-color)';
                 selectedButton.style.backgroundColor = 'var(--incorrect-bg)';
-                // 正解のボタンをハイライト
                 for(const btn of buttons) {
-                    // textContentが完全に一致するものを探す
-                    if (btn.textContent === `(${choices.indexOf(correctCity) + 1}) ${correctCity}`) {
+                    if (btn.textContent.includes(` ${correctCity}`)) {
                         btn.style.backgroundColor = 'var(--correct-bg)';
                         break;
                     }
                 }
             }
 
-            // スコアを保存
             localStorage.setItem('totalCorrect', totalCorrect);
             localStorage.setItem('totalQuestions', totalQuestions);
 
@@ -380,40 +491,57 @@
             }
         }
 
-        function showFinalResult() {
-            const message = `今回の成績: 10問中 ${currentGameCorrect} 問正解でした！\n\nもう一度プレイしますか？`;
-            if (confirm(message)) {
-                startGame();
-            } else {
-                questionNumLabel.textContent = 'プレイありがとうございました！';
-                codeLabel.textContent = '😊';
-                choicesContainer.innerHTML = '';
-                feedbackLabel.textContent = '';
-                nextButton.style.visibility = 'hidden';
-            }
+        function endGame() {
+            quizContainer.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+
+            const sessionQuestions = questionCount -1; // 最後の問題は回答していないため-1
+            const sessionRate = sessionQuestions > 0 ? (currentGameCorrect / sessionQuestions) * 100 : 0;
+            
+            sessionScoreLabel.innerHTML = `
+                正解数: ${currentGameCorrect} / ${sessionQuestions} 問<br>
+                正解率: ${sessionRate.toFixed(1)}%
+            `;
+        }
+
+        function showHomeScreen() {
+            quizContainer.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
         }
         
-        // イベントリスナーの設定
+        // === イベントリスナーの設定 ===
+        startButton.addEventListener('click', startGame);
+        endGameButton.addEventListener('click', endGame);
+        backToHomeButton.addEventListener('click', showHomeScreen);
         nextButton.addEventListener('click', nextQuestion);
         resetButton.addEventListener('click', resetScore);
 
         // キーボード操作
         document.addEventListener('keydown', (e) => {
-            const key = parseInt(e.key);
-            if (key >= 1 && key <= 4) {
-                const buttons = choicesContainer.getElementsByTagName('button');
-                if (buttons[key - 1] && !buttons[key - 1].disabled) {
-                    buttons[key - 1].click();
-                }
-            } else if (e.key === 'Enter') {
-                if (nextButton.style.visibility === 'visible') {
-                    nextButton.click();
+            // テキスト入力中などはキー操作を無効にする
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            // クイズ画面が表示されている時のみ有効
+            if (!quizContainer.classList.contains('hidden')) {
+                const key = parseInt(e.key);
+                if (key >= 1 && key <= 4) {
+                    const buttons = choicesContainer.getElementsByTagName('button');
+                    if (buttons[key - 1] && !buttons[key - 1].disabled) {
+                        buttons[key - 1].click();
+                    }
+                } else if (e.key === 'Enter' || e.code === 'Space') {
+                    if (nextButton.style.visibility === 'visible') {
+                        e.preventDefault(); // スペースキーでの画面スクロールを防止
+                        nextButton.click();
+                    }
                 }
             }
         });
 
-        // ゲーム開始
-        startGame();
+        // 初期表示
+        showHomeScreen();
+        updateScoreDisplay();
 
     </script>
 </body>
