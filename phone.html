@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市外局番クイズ</title>
+    <style>
+        /* Google Fontsからフォントを読み込み */
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Roboto:wght@700&display=swap');
+
+        :root {
+            --primary-color: #003366;
+            --light-gray: #f0f0f0;
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --correct-bg: #d4edda;
+            --incorrect-bg: #f8d7da;
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--light-gray);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .quiz-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        #question-num-label {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #555;
+        }
+
+        #code-label {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(3rem, 12vw, 5rem); /* 画面サイズに応じて調整 */
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 1.5rem 0;
+        }
+
+        #choices-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .choice-btn {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            /* テキストがはみ出さないように調整 */
+            word-break: break-word;
+            min-height: 4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice-btn:hover:not(:disabled) {
+            background-color: #f8f8f8;
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+        
+        .choice-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        #feedback-label {
+            font-size: 1.2rem;
+            font-weight: 700;
+            min-height: 1.5em; /* 高さを確保してレイアウトが崩れないように */
+            margin: 1.5rem 0;
+        }
+
+        #next-button {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            visibility: hidden; /* 最初は非表示 */
+        }
+
+        #next-button:hover {
+            background-color: #0055aa;
+        }
+        
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        #score-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        #reset-button {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+            color: #666;
+        }
+        #reset-button:hover {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <h2 id="question-num-label"></h2>
+        <h1 id="code-label"></h1>
+        <div id="choices-container">
+            <!-- 選択肢ボタンはJSで生成 -->
+        </div>
+        <p id="feedback-label"></p>
+        <button id="next-button">次の問題へ (Enter)</button>
+        
+        <div class="footer">
+            <p id="score-label"></p>
+            <button id="reset-button">成績リセット</button>
+        </div>
+    </div>
+
+    <script>
+        // 市外局番データを直接JSに記述 (まとめられた市町村名のまま更新)
+        const areaData = [
+            { city: '札幌', code: '11' }, { city: '旭川', code: '166' }, { city: '函館', code: '138' },
+            { city: '釧路', code: '154' }, { city: '小樽', code: '134' }, { city: '室蘭', code: '143' },
+            { city: '帯広', code: '155' }, { city: '苫小牧', code: '144' }, { city: '北見', code: '157' },
+            { city: '千歳', code: '123' }, { city: '根室', code: '1532' }, { city: '青森', code: '177' },
+            { city: '八戸', code: '178' }, { city: '弘前,黒石', code: '172' }, { city: '十和田', code: '176' },
+            { city: '五所川原', code: '173' }, { city: '盛岡', code: '19' }, { city: '釜石', code: '193' },
+            { city: '花巻', code: '198' }, { city: '一関', code: '191' }, { city: '仙台', code: '22' },
+            { city: '石巻', code: '225' }, { city: '気仙沼', code: '226' }, { city: '古川', code: '229' },
+            { city: '秋田', code: '188' }, { city: '大館', code: '186' }, { city: '能代', code: '185' },
+            { city: '山形,蔵王温泉', code: '236' }, { city: '酒田', code: '234' }, { city: '鶴岡', code: '235' },
+            { city: '米沢', code: '238' }, { city: '福島', code: '245' }, { city: 'いわき', code: '246' },
+            { city: '郡山', code: '249' }, { city: '会津若松', code: '242' }, { city: '喜多方', code: '241' },
+            { city: '水戸,ひたちなか', code: '29' }, { city: '日立', code: '294' }, { city: '土浦,つくば', code: '298' },
+            { city: '取手', code: '297' }, { city: '宇都宮', code: '28' }, { city: '足利', code: '284' },
+            { city: '小山', code: '285' }, { city: '栃木', code: '282' }, { city: '鹿沼', code: '289' },
+            { city: '日光,鬼怒川', code: '288' }, { city: '前橋,高崎', code: '27' }, { city: '桐生', code: '277' },
+            { city: '伊勢崎', code: '270' }, { city: '太田,館林', code: '276' }, { city: '沼田', code: '278' },
+            { city: '渋川', code: '279' }, { city: '藤岡,富岡', code: '274' }, { city: '安中', code: '273' },
+            { city: '浦和,大宮,川口,春日部', code: '48' }, { city: '川越', code: '492' }, { city: '熊谷', code: '485' },
+            { city: '所沢', code: '429' }, { city: '越谷,草加', code: '489' }, { city: '秩父', code: '494' },
+            { city: '千葉', code: '43' }, { city: '船橋,八千代,習志野', code: '474' }, { city: '松戸,市川,浦安', code: '47' },
+            { city: '柏,我孫子,野田,流山', code: '471' }, { city: '市原', code: '436' }, { city: '木更津', code: '438' },
+            { city: '銚子', code: '479' }, { city: '成田', code: '476' }, { city: '区部', code: '3' },
+            { city: '八王子', code: '426' }, { city: '町田,相模原', code: '427' }, { city: '府中,小平,東村山,小金井,国分寺,多摩', code: '423' },
+            { city: '調布,東久留米,保谷,田無', code: '424' }, { city: '三鷹,武蔵野', code: '422' }, { city: '立川,日野,昭島,東大和,国立', code: '425' },
+            { city: '青梅', code: '428' }, { city: '横浜', code: '45' }, { city: '川崎', code: '44' },
+            { city: '横須賀,逗子,葉山', code: '468' }, { city: '藤沢', code: '466' }, { city: '平塚,秦野', code: '463' },
+            { city: '小田原', code: '465' }, { city: '鎌倉,茅ヶ崎', code: '467' }, { city: '大和,厚木,座間', code: '462' },
+            { city: '箱根', code: '460' }, { city: '甲府', code: '552' }, { city: '富士吉田', code: '555' },
+            { city: '山梨', code: '553' }, { city: '大月', code: '554' }, { city: '新潟', code: '25' },
+            { city: '長岡', code: '258' }, { city: '上越', code: '255' }, { city: '三条', code: '256' },
+            { city: '柏崎,十日町,湯沢', code: '257' }, { city: '長野', code: '26' }, { city: '松本', code: '263' },
+            { city: '上田', code: '268' }, { city: '飯田', code: '265' }, { city: '軽井沢', code: '267' },
+            { city: '富山', code: '764' }, { city: '高岡,氷見', code: '766' }, { city: '金沢', code: '762' },
+            { city: '小松', code: '761' }, { city: '加賀', code: '7617' }, { city: '福井', code: '776' },
+            { city: '武生,鯖江', code: '778' }, { city: '敦賀', code: '770' }, { city: '岐阜', code: '58' },
+            { city: '大垣', code: '584' }, { city: '高山', code: '577' }, { city: '多治見', code: '572' },
+            { city: '静岡,焼津', code: '54' }, { city: '浜松', code: '53' }, { city: '沼津,三島', code: '559' },
+            { city: '熱海,伊東', code: '557' }, { city: '富士宮', code: '544' }, { city: '富士', code: '545' },
+            { city: '名古屋', code: '52' }, { city: '豊橋', code: '532' }, { city: '岡崎', code: '564' },
+            { city: '一宮', code: '586' }, { city: '瀬戸', code: '561' }, { city: '半田,常滑', code: '569' },
+            { city: '春日井,犬山,小牧', code: '568' }, { city: '豊川,蒲郡', code: '533' }, { city: '津島', code: '567' },
+            { city: '豊田', code: '565' }, { city: '安城', code: '566' }, { city: '西尾', code: '563' },
+            { city: '津', code: '59' }, { city: '四日市,鈴鹿', code: '593' }, { city: '伊勢', code: '596' },
+            { city: '松阪', code: '598' }, { city: '桑名', code: '594' }, { city: '上野', code: '595' },
+            { city: '鳥羽', code: '599' }, { city: '大津', code: '775' }, { city: '彦根,長浜', code: '749' },
+            { city: '京都', code: '75' }, { city: '福知山,舞鶴', code: '773' }, { city: '宇治', code: '774' },
+            { city: '大阪,豊中,吹田,守口,門真,東大阪,尼崎', code: '6' }, { city: '堺', code: '722' }, { city: '岸和田', code: '724' },
+            { city: '池田,箕面,伊丹,川西', code: '727' }, { city: '泉大津,和泉', code: '725' }, { city: '高槻,茨木', code: '726' },
+            { city: '枚方,寝屋川,大東', code: '720' }, { city: '八尾', code: '729' }, { city: '河内長野', code: '721' },
+            { city: '松原', code: '723' }, { city: '神戸,明石', code: '78' }, { city: '姫路', code: '792' },
+            { city: '西宮', code: '798' }, { city: '芦屋,宝塚', code: '797' }, { city: '加古川,三木', code: '794' },
+            { city: '三田', code: '795' }, { city: '奈良', code: '742' }, { city: '大和高田', code: '745' },
+            { city: '天理', code: '743' }, { city: '桜井', code: '744' }, { city: '和歌山', code: '734' },
+            { city: '田辺', code: '739' }, { city: '鳥取', code: '857' }, { city: '米子', code: '859' },
+            { city: '松江', code: '852' }, { city: '出雲', code: '853' }, { city: '岡山', code: '862' },
+            { city: '倉敷', code: '864' }, { city: '津山', code: '868' }, { city: '広島', code: '82' },
+            { city: '呉', code: '823' }, { city: '福山', code: '849' }, { city: '尾道', code: '848' },
+            { city: '下関', code: '832' }, { city: '宇部', code: '836' }, { city: '山口', code: '839' },
+            { city: '徳島', code: '886' }, { city: '高松', code: '878' }, { city: '松山', code: '89' },
+            { city: '今治', code: '898' }, { city: '宇和島', code: '895' }, { city: '高知', code: '888' },
+            { city: '福岡', code: '92' }, { city: '北九州', code: '93' }, { city: '久留米', code: '942' },
+            { city: '大牟田', code: '944' }, { city: '佐賀', code: '952' }, { city: '唐津', code: '955' },
+            { city: '長崎', code: '958' }, { city: '佐世保', code: '956' }, { city: '熊本', code: '96' },
+            { city: '八代', code: '965' }, { city: '大分', code: '975' }, { city: '別府', code: '977' },
+            { city: '宮崎', code: '985' }, { city: '都城', code: '986' }, { city: '延岡', code: '982' },
+            { city: '鹿児島', code: '99' }, { city: '川内', code: '996' }, { city: '鹿屋', code: '994' },
+            { city: '那覇', code: '98' }
+        ];
+
+        // DOM要素の取得
+        const questionNumLabel = document.getElementById('question-num-label');
+        const codeLabel = document.getElementById('code-label');
+        const choicesContainer = document.getElementById('choices-container');
+        const feedbackLabel = document.getElementById('feedback-label');
+        const nextButton = document.getElementById('next-button');
+        const scoreLabel = document.getElementById('score-label');
+        const resetButton = document.getElementById('reset-button');
+
+        // ゲームの状態変数
+        let questionCount = 0;
+        let currentGameCorrect = 0;
+        let correctCity = '';
+        let choices = [];
+        
+        // スコア (localStorageから読み込み)
+        let totalCorrect = parseInt(localStorage.getItem('totalCorrect')) || 0;
+        let totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || 0;
+
+        function startGame() {
+            questionCount = 0;
+            currentGameCorrect = 0;
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            questionCount++;
+            if (questionCount > 10) {
+                showFinalResult();
+                return;
+            }
+
+            // UIリセット
+            feedbackLabel.textContent = '';
+            nextButton.style.visibility = 'hidden';
+            choicesContainer.innerHTML = ''; // 選択肢をクリア
+
+            questionNumLabel.textContent = `第 ${questionCount} 問 / 10問`;
+
+            // 問題をランダムに選択
+            const correctIndex = Math.floor(Math.random() * areaData.length);
+            const correctData = areaData[correctIndex];
+            correctCity = correctData.city;
+            
+            codeLabel.textContent = `0${correctData.code}`;
+
+            // 選択肢を作成
+            let currentChoices = new Set([correctCity]);
+            const searchRange = 15;
+            let minIndex = Math.max(0, correctIndex - searchRange);
+            let maxIndex = Math.min(areaData.length - 1, correctIndex + searchRange);
+
+            // 近傍から不正解の選択肢を追加
+            let nearbyIndices = [];
+            for (let i = minIndex; i <= maxIndex; i++) {
+                if (i !== correctIndex) nearbyIndices.push(i);
+            }
+            
+            // Fisher-Yatesシャッフル
+            for (let i = nearbyIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [nearbyIndices[i], nearbyIndices[j]] = [nearbyIndices[j], nearbyIndices[i]];
+            }
+
+            for(const idx of nearbyIndices) {
+                if (currentChoices.size < 4) {
+                    currentChoices.add(areaData[idx].city);
+                }
+            }
+
+            // 選択肢が4つに満たない場合、全体からランダムに補う
+            while (currentChoices.size < 4) {
+                const randomData = areaData[Math.floor(Math.random() * areaData.length)];
+                currentChoices.add(randomData.city);
+            }
+
+            choices = Array.from(currentChoices);
+            // シャッフル
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+
+            // ボタンを生成して表示
+            choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = `(${index + 1}) ${choice}`;
+                button.classList.add('choice-btn');
+                button.onclick = () => checkAnswer(choice, button);
+                choicesContainer.appendChild(button);
+            });
+
+            updateScoreDisplay();
+        }
+
+        function checkAnswer(selectedAnswer, selectedButton) {
+            // 全てのボタンを無効化
+            const buttons = choicesContainer.getElementsByTagName('button');
+            for(const btn of buttons) {
+                btn.disabled = true;
+            }
+
+            totalQuestions++;
+            if (selectedAnswer === correctCity) {
+                currentGameCorrect++;
+                totalCorrect++;
+                feedbackLabel.textContent = '正解！';
+                feedbackLabel.style.color = 'var(--correct-color)';
+                selectedButton.style.backgroundColor = 'var(--correct-bg)';
+            } else {
+                feedbackLabel.textContent = `不正解... 正解は「${correctCity}」`;
+                feedbackLabel.style.color = 'var(--incorrect-color)';
+                selectedButton.style.backgroundColor = 'var(--incorrect-bg)';
+                // 正解のボタンをハイライト
+                for(const btn of buttons) {
+                    // textContentが完全に一致するものを探す
+                    if (btn.textContent === `(${choices.indexOf(correctCity) + 1}) ${correctCity}`) {
+                        btn.style.backgroundColor = 'var(--correct-bg)';
+                        break;
+                    }
+                }
+            }
+
+            // スコアを保存
+            localStorage.setItem('totalCorrect', totalCorrect);
+            localStorage.setItem('totalQuestions', totalQuestions);
+
+            updateScoreDisplay();
+            nextButton.style.visibility = 'visible';
+        }
+
+        function updateScoreDisplay() {
+            const rate = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
+            scoreLabel.textContent = `累計スコア: ${totalCorrect} / ${totalQuestions} (正解率: ${rate.toFixed(1)}%)`;
+        }
+        
+        function resetScore() {
+            if (confirm('本当にすべての成績をリセットしますか？')) {
+                totalCorrect = 0;
+                totalQuestions = 0;
+                localStorage.removeItem('totalCorrect');
+                localStorage.removeItem('totalQuestions');
+                updateScoreDisplay();
+                alert('成績をリセットしました。');
+            }
+        }
+
+        function showFinalResult() {
+            const message = `今回の成績: 10問中 ${currentGameCorrect} 問正解でした！\n\nもう一度プレイしますか？`;
+            if (confirm(message)) {
+                startGame();
+            } else {
+                questionNumLabel.textContent = 'プレイありがとうございました！';
+                codeLabel.textContent = '😊';
+                choicesContainer.innerHTML = '';
+                feedbackLabel.textContent = '';
+                nextButton.style.visibility = 'hidden';
+            }
+        }
+        
+        // イベントリスナーの設定
+        nextButton.addEventListener('click', nextQuestion);
+        resetButton.addEventListener('click', resetScore);
+
+        // キーボード操作
+        document.addEventListener('keydown', (e) => {
+            const key = parseInt(e.key);
+            if (key >= 1 && key <= 4) {
+                const buttons = choicesContainer.getElementsByTagName('button');
+                if (buttons[key - 1] && !buttons[key - 1].disabled) {
+                    buttons[key - 1].click();
+                }
+            } else if (e.key === 'Enter') {
+                if (nextButton.style.visibility === 'visible') {
+                    nextButton.click();
+                }
+            }
+        });
+
+        // ゲーム開始
+        startGame();
+
+    </script>
+</body>
+</html>
