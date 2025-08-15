@@ -10,6 +10,7 @@
 
         :root {
             --primary-color: #003366;
+            --secondary-color: #007bff;
             --light-gray: #f0f0f0;
             --correct-color: #28a745;
             --incorrect-color: #dc3545;
@@ -57,25 +58,37 @@
 
         #home-screen h1 {
             font-size: 3rem;
+            margin-bottom: 3rem;
             text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
         }
+        
+        .mode-selection {
+            display: flex;
+            gap: 1rem;
+        }
 
-        #start-button {
+        .mode-button {
             font-family: 'M PLUS Rounded 1c', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            padding: 1rem 3rem;
+            padding: 1rem 2rem;
             border-radius: 50px;
             border: none;
-            background-color: white;
-            color: var(--primary-color);
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        #start-button:hover {
+        .mode-button:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        #start-button-normal {
+            background-color: white;
+            color: var(--primary-color);
+        }
+        #start-button-easy {
+            background-color: var(--secondary-color);
+            color: white;
         }
 
 
@@ -245,7 +258,10 @@
     <!-- ホーム画面 -->
     <div id="home-screen">
         <h1>市外局番クイズ</h1>
-        <button id="start-button">通常モード</button>
+        <div class="mode-selection">
+            <button id="start-button-normal" class="mode-button">通常モード</button>
+            <button id="start-button-easy" class="mode-button">簡単モード</button>
+        </div>
     </div>
 
     <!-- クイズ画面 -->
@@ -271,8 +287,9 @@
 
 
     <script>
-        // 市外局番データを直接JSに記述
-        const areaData = [
+        // === データベース ===
+        // 通常モード用データ
+        const normalAreaData = [
             { city: '札幌', code: '11' }, { city: '旭川', code: '166' }, { city: '函館', code: '138' },
             { city: '釧路', code: '154' }, { city: '小樽', code: '134' }, { city: '室蘭', code: '143' },
             { city: '帯広', code: '155' }, { city: '苫小牧', code: '144' }, { city: '北見', code: '157' },
@@ -342,13 +359,38 @@
             { city: '鹿児島', code: '99' }, { city: '川内', code: '996' }, { city: '鹿屋', code: '994' },
             { city: '那覇', code: '98' }
         ];
+        
+        // 簡単モード用データ
+        const easyAreaData = [
+            { city: '札幌市', code: '11' }, { city: '空知', code: '12' }, { city: '北海道西部', code: '13' },
+            { city: '胆振・日高', code: '14' }, { city: '北海道東部', code: '15' }, { city: '上川・宗谷', code: '16' },
+            { city: '青森県', code: '17' }, { city: '岩手県', code: '19' }, { city: '宮城県', code: '22' },
+            { city: '秋田県', code: '18' }, { city: '山形県', code: '23' }, { city: '福島県', code: '24' },
+            { city: '茨城県', code: '29' }, { city: '栃木県', code: '28' }, { city: '群馬県', code: '27' },
+            { city: '埼玉東部', code: '48' }, { city: '埼玉西部', code: '49' }, { city: '千葉外房', code: '47' },
+            { city: '千葉内房', code: '43' }, { city: '区部', code: '3' }, { city: '東京西部', code: '42' },
+            { city: '伊豆小笠原', code: '49' }, { city: '横浜市', code: '45' }, { city: '神奈川西郡', code: '46' },
+            { city: '新潟県', code: '25' }, { city: '富山・石川', code: '76' }, { city: '福井・京都北部・滋賀西郡', code: '77' },
+            { city: '山梨県・伊豆', code: '55' }, { city: '長野県', code: '26' }, { city: '岐阜県', code: '57' },
+            { city: '静岡中部', code: '54' }, { city: '浜松', code: '53' }, { city: '三河', code: '56' },
+            { city: '尾張', code: '52' }, { city: '三重県', code: '59' }, { city: '滋賀・奈良', code: '74' },
+            { city: '京都市', code: '75' }, { city: '大阪市', code: '6' }, { city: '大阪府', code: '72' },
+            { city: '神戸市', code: '78' }, { city: '兵庫県', code: '79' }, { city: '和歌山県', code: '73' },
+            { city: '鳥取・島根県', code: '85' }, { city: '岡山県', code: '86' }, { city: '広島東部', code: '84' },
+            { city: '広島西郡', code: '82' }, { city: '山口県', code: '83' }, { city: '香川県', code: '87' },
+            { city: '愛媛県', code: '89' }, { city: '高知・徳島', code: '88' }, { city: '北九州', code: '93' },
+            { city: '福岡中部', code: '94' }, { city: '福岡西郡・対馬', code: '92' }, { city: '佐賀・長崎', code: '95' },
+            { city: '熊本県', code: '96' }, { city: '大分県', code: '97' }, { city: '宮崎県', code: '98' },
+            { city: '鹿児島県', code: '99' }
+        ];
 
         // === DOM要素の取得 ===
         const homeScreen = document.getElementById('home-screen');
         const quizContainer = document.getElementById('quiz-container');
         const resultsScreen = document.getElementById('results-screen');
 
-        const startButton = document.getElementById('start-button');
+        const startButtonNormal = document.getElementById('start-button-normal');
+        const startButtonEasy = document.getElementById('start-button-easy');
         const endGameButton = document.getElementById('end-game-button');
         const backToHomeButton = document.getElementById('back-to-home-button');
         
@@ -362,6 +404,7 @@
         const sessionScoreLabel = document.getElementById('session-score');
 
         // === ゲームの状態変数 ===
+        let currentAreaData = []; // 現在プレイ中のモードのデータ
         let questionCount = 0;
         let currentGameCorrect = 0;
         let correctCity = '';
@@ -372,7 +415,9 @@
         let totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || 0;
 
         // === ゲームロジック ===
-        function startGame() {
+        function startGame(mode) {
+            currentAreaData = (mode === 'easy') ? easyAreaData : normalAreaData;
+            
             homeScreen.classList.add('hidden');
             resultsScreen.classList.add('hidden');
             quizContainer.classList.remove('hidden');
@@ -393,8 +438,8 @@
             questionNumLabel.textContent = `第 ${questionCount} 問`;
 
             // 問題をランダムに選択
-            const correctIndex = Math.floor(Math.random() * areaData.length);
-            const correctData = areaData[correctIndex];
+            const correctIndex = Math.floor(Math.random() * currentAreaData.length);
+            const correctData = currentAreaData[correctIndex];
             correctCity = correctData.city;
             
             codeLabel.textContent = `0${correctData.code}`;
@@ -403,7 +448,7 @@
             let currentChoices = new Set([correctCity]);
             const searchRange = 15;
             let minIndex = Math.max(0, correctIndex - searchRange);
-            let maxIndex = Math.min(areaData.length - 1, correctIndex + searchRange);
+            let maxIndex = Math.min(currentAreaData.length - 1, correctIndex + searchRange);
 
             let nearbyIndices = [];
             for (let i = minIndex; i <= maxIndex; i++) {
@@ -417,12 +462,12 @@
 
             for(const idx of nearbyIndices) {
                 if (currentChoices.size < 4) {
-                    currentChoices.add(areaData[idx].city);
+                    currentChoices.add(currentAreaData[idx].city);
                 }
             }
 
             while (currentChoices.size < 4) {
-                const randomData = areaData[Math.floor(Math.random() * areaData.length)];
+                const randomData = currentAreaData[Math.floor(Math.random() * currentAreaData.length)];
                 currentChoices.add(randomData.city);
             }
 
@@ -495,7 +540,7 @@
             quizContainer.classList.add('hidden');
             resultsScreen.classList.remove('hidden');
 
-            const sessionQuestions = questionCount -1; // 最後の問題は回答していないため-1
+            const sessionQuestions = questionCount -1;
             const sessionRate = sessionQuestions > 0 ? (currentGameCorrect / sessionQuestions) * 100 : 0;
             
             sessionScoreLabel.innerHTML = `
@@ -511,7 +556,8 @@
         }
         
         // === イベントリスナーの設定 ===
-        startButton.addEventListener('click', startGame);
+        startButtonNormal.addEventListener('click', () => startGame('normal'));
+        startButtonEasy.addEventListener('click', () => startGame('easy'));
         endGameButton.addEventListener('click', endGame);
         backToHomeButton.addEventListener('click', showHomeScreen);
         nextButton.addEventListener('click', nextQuestion);
@@ -519,10 +565,8 @@
 
         // キーボード操作
         document.addEventListener('keydown', (e) => {
-            // テキスト入力中などはキー操作を無効にする
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-            // クイズ画面が表示されている時のみ有効
             if (!quizContainer.classList.contains('hidden')) {
                 const key = parseInt(e.key);
                 if (key >= 1 && key <= 4) {
@@ -532,7 +576,7 @@
                     }
                 } else if (e.key === 'Enter' || e.code === 'Space') {
                     if (nextButton.style.visibility === 'visible') {
-                        e.preventDefault(); // スペースキーでの画面スクロールを防止
+                        e.preventDefault();
                         nextButton.click();
                     }
                 }
